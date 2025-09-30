@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import './App.css';
 import CVRanking from './components/CVRanking';
 import CVGeneration from './components/CVGeneration';
@@ -10,6 +10,23 @@ function App() {
   const [generatedCVs, setGeneratedCVs] = useState<any[]>([]);
   const [jobDescription, setJobDescription] = useState('');
   const [shouldAutoRank, setShouldAutoRank] = useState(false);
+
+  const handleRankAllGeneratedCVs = useCallback(() => {
+    setShouldAutoRank(true);
+    setCurrentMode('ranking');
+  }, []);
+
+  const handleAutoRankComplete = useCallback(() => {
+    setShouldAutoRank(false);
+  }, []);
+
+  const handleGeneratedCVsChange = useCallback((cvs: any[]) => {
+    setGeneratedCVs(cvs);
+  }, []);
+
+  const handleJobDescriptionChange = useCallback((desc: string) => {
+    setJobDescription(desc);
+  }, []);
 
   return (
     <div className="App">
@@ -36,24 +53,21 @@ function App() {
       <main className="main-content">
         <div style={{ display: currentMode === 'ranking' ? 'block' : 'none' }}>
           <CVRanking 
+            onRankAllGeneratedCVs={handleRankAllGeneratedCVs}
             generatedCVs={generatedCVs}
             jobDescription={jobDescription}
-            onGeneratedCVsChange={setGeneratedCVs}
-            onJobDescriptionChange={setJobDescription}
             shouldAutoRank={shouldAutoRank}
-            onAutoRankComplete={() => setShouldAutoRank(false)}
+            onAutoRankComplete={handleAutoRankComplete}
+            onJobDescriptionChange={handleJobDescriptionChange}
           />
         </div>
         <div style={{ display: currentMode === 'generation' ? 'block' : 'none' }}>
           <CVGeneration 
-            onRankAllGeneratedCVs={() => {
-              setShouldAutoRank(true);
-              setCurrentMode('ranking');
-            }}
+            onRankAllGeneratedCVs={handleRankAllGeneratedCVs}
             generatedCVs={generatedCVs}
             jobDescription={jobDescription}
-            onGeneratedCVsChange={setGeneratedCVs}
-            onJobDescriptionChange={setJobDescription}
+            onGeneratedCVsChange={handleGeneratedCVsChange}
+            onJobDescriptionChange={handleJobDescriptionChange}
           />
         </div>
       </main>
