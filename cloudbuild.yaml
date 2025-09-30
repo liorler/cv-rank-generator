@@ -32,7 +32,8 @@ steps:
       '--memory', '2Gi',
       '--cpu', '2',
       '--max-instances', '10',
-      '--timeout', '300s'
+      '--timeout', '300s',
+      '--set-env-vars', 'OPENAI_API_KEY=${_OPENAI_API_KEY}'
     ]
     timeout: '300s'  # 5 minutes timeout
 
@@ -47,3 +48,7 @@ options:
 images:
   - 'gcr.io/$PROJECT_ID/cv-rank-generator:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/cv-rank-generator:latest'
+
+# Substitution variables
+substitutions:
+  _OPENAI_API_KEY: 'your-openai-api-key-here'
