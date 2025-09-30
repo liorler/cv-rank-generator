@@ -26,4 +26,8 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 # Start the application
+<<<<<<< HEAD
 CMD ["npm", "start"]
+=======
+CMD ["npm", "start"]
+>>>>>>> 68100474df9cb49efff82bb2bea9c4dafe14e0e0
