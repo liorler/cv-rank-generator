@@ -13,7 +13,7 @@ steps:
       'run', 'deploy', 'cv-rank-generator',
       '--image', 'gcr.io/$PROJECT_ID/cv-rank-generator',
       '--platform', 'managed',
-      '--region', 'us-central1',
+      '--region', 'europe-west1',
       '--allow-unauthenticated',
       '--memory', '2Gi',
       '--cpu', '2',
