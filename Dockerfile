@@ -4,16 +4,14 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package*.json ./
+# Copy client package files first
 COPY client/package*.json ./client/
 
-# Install dependencies with optimizations
-RUN npm ci --only=production --silent && \
-    cd client && npm ci --silent
+# Install only client dependencies (including dev dependencies for build)
+RUN cd client && npm ci --silent
 
-# Copy source code
-COPY . .
+# Copy client source code
+COPY client ./client
 
 # Build React app
 RUN cd client && npm run build
