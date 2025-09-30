@@ -28,6 +28,13 @@ interface CVGenerationProps {
   onJobDescriptionChange: (desc: string) => void;
 }
 
+// Simple utility function - no need for useCallback
+const getScoreColor = (score: number) => {
+  if (score >= 80) return '#28a745';
+  if (score >= 60) return '#ffc107';
+  return '#dc3545';
+};
+
 const CVGeneration: React.FC<CVGenerationProps> = ({
   onRankAllGeneratedCVs,
   generatedCVs: propGeneratedCVs,
@@ -42,13 +49,6 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCVs, setGeneratedCVs] = useState<GeneratedCV[]>(propGeneratedCVs);
   const [error, setError] = useState<string>('');
-
-  // Memoized score color function
-  const getScoreColor = useCallback((score: number) => {
-    if (score >= 80) return '#28a745';
-    if (score >= 60) return '#ffc107';
-    return '#dc3545';
-  }, []);
 
   // Memoized CV content formatter to prevent re-formatting on every render
   const formatCVContent = useCallback((content: string) => {

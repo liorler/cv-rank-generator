@@ -21,6 +21,13 @@ interface CVRankingProps {
   onJobDescriptionChange: (desc: string) => void;
 }
 
+// Simple utility function - no need for useCallback
+const getScoreColor = (score: number) => {
+  if (score >= 80) return '#28a745';
+  if (score >= 60) return '#ffc107';
+  return '#dc3545';
+};
+
 const CVRanking: React.FC<CVRankingProps> = ({
   onRankAllGeneratedCVs,
   generatedCVs: propGeneratedCVs,
@@ -40,22 +47,6 @@ const CVRanking: React.FC<CVRankingProps> = ({
   const sortedResults = useMemo(() => {
     return [...results].sort((a, b) => b.score - a.score);
   }, [results]);
-
-  // Memoized score color function
-  const getScoreColor = useCallback((score: number) => {
-    if (score >= 80) return '#28a745';
-    if (score >= 60) return '#ffc107';
-    return '#dc3545';
-  }, []);
-
-  // Auto-rank generated CVs when shouldAutoRank is true
-  useEffect(() => {
-    if (shouldAutoRank && propGeneratedCVs.length > 0 && propJobDescription.trim()) {
-      // Copy job description to text area
-      setJobDescriptionText(propJobDescription);
-      handleAutoRank();
-    }
-  }, [shouldAutoRank, propGeneratedCVs, propJobDescription]);
 
   const handleAutoRank = useCallback(async () => {
     setIsLoading(true);
@@ -89,6 +80,15 @@ const CVRanking: React.FC<CVRankingProps> = ({
       setIsLoading(false);
     }
   }, [propGeneratedCVs, propJobDescription, onAutoRankComplete]);
+
+  // Auto-rank generated CVs when shouldAutoRank is true
+  useEffect(() => {
+    if (shouldAutoRank && propGeneratedCVs.length > 0 && propJobDescription.trim()) {
+      // Copy job description to text area
+      setJobDescriptionText(propJobDescription);
+      handleAutoRank();
+    }
+  }, [shouldAutoRank, propGeneratedCVs, propJobDescription, handleAutoRank]);
 
   const handleCVChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
