@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 
 interface GeneratedCV {
@@ -43,29 +43,59 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
   const [generatedCVs, setGeneratedCVs] = useState<GeneratedCV[]>(propGeneratedCVs);
   const [error, setError] = useState<string>('');
 
-  const handleJobDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  // Memoized score color function
+  const getScoreColor = useCallback((score: number) => {
+    if (score >= 80) return '#28a745';
+    if (score >= 60) return '#ffc107';
+    return '#dc3545';
+  }, []);
+
+  // Memoized CV content formatter to prevent re-formatting on every render
+  const formatCVContent = useCallback((content: string) => {
+    // Convert the text content to HTML with proper formatting
+    let formatted = content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
+      .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1 headers
+      .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2 headers
+      .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3 headers
+      .replace(/^- (.*$)/gm, '<li>$1</li>') // Dash points
+      .replace(/^\* (.*$)/gm, '<li>$1</li>') // Star points
+      .replace(/^• (.*$)/gm, '<li>$1</li>') // Bullet points
+      .replace(/\n\n/g, '<br><br>') // Double line breaks
+      .replace(/\n/g, '<br>'); // Single line breaks
+
+    // Wrap consecutive list items in ul tags
+    formatted = formatted.replace(/(<li>.*?<\/li>(?:<br>)*)+/g, (match) => {
+      return '<ul>' + match.replace(/<br>/g, '') + '</ul>';
+    });
+
+    return formatted;
+  }, []);
+
+  const handleJobDescriptionChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     setJobDescription(value);
     onJobDescriptionChange(value);
-  };
+  }, [onJobDescriptionChange]);
 
-  const handleNumberOfCVsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNumberOfCVsChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value);
     if (value > 0) {
       setNumberOfCVs(value);
     }
-  };
+  }, []);
 
-  const handleAdditionalDataChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleAdditionalDataChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setAdditionalData(event.target.value);
-  };
+  }, []);
 
-  const handleBaseDataFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBaseDataFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setBaseDataFile(file);
-  };
+  }, []);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
     
     if (!jobDescription.trim()) {
@@ -110,9 +140,9 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [jobDescription, numberOfCVs, additionalData, baseDataFile, onGeneratedCVsChange]);
 
-  const downloadCV = async (content: string, title: string, format: 'txt' | 'word' | 'pdf') => {
+  const downloadCV = useCallback(async (content: string, title: string, format: 'txt' | 'word' | 'pdf') => {
     if (format === 'txt') {
       const element = document.createElement('a');
       const file = new Blob([content], { type: 'text/plain' });
@@ -143,31 +173,9 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
         setError(`Failed to download ${format.toUpperCase()} file`);
       }
     }
-  };
+  }, []);
 
-  const formatCVContent = (content: string) => {
-    // Convert the text content to HTML with proper formatting
-    let formatted = content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
-      .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1 headers
-      .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2 headers
-      .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3 headers
-      .replace(/^\- (.*$)/gm, '<li>$1</li>') // Dash points
-      .replace(/^\* (.*$)/gm, '<li>$1</li>') // Star points
-      .replace(/^• (.*$)/gm, '<li>$1</li>') // Bullet points
-      .replace(/\n\n/g, '<br><br>') // Double line breaks
-      .replace(/\n/g, '<br>'); // Single line breaks
-
-    // Wrap consecutive list items in ul tags
-    formatted = formatted.replace(/(<li>.*?<\/li>(?:<br>)*)+/g, (match) => {
-      return '<ul>' + match.replace(/<br>/g, '') + '</ul>';
-    });
-
-    return formatted;
-  };
-
-  const rankSingleCV = async (cvIndex: number) => {
+  const rankSingleCV = useCallback(async (cvIndex: number) => {
     if (!jobDescription.trim()) {
       setError('Job description is required for ranking');
       return;
@@ -207,23 +215,17 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
       ));
       setError('Failed to rank CV: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
-  };
+  }, [jobDescription, generatedCVs]);
 
-  const rankAllGeneratedCVs = () => {
+  const rankAllGeneratedCVs = useCallback(() => {
     if (!jobDescription.trim()) {
       setError('Job description is required for ranking');
       return;
     }
     onRankAllGeneratedCVs();
-  };
+  }, [jobDescription, onRankAllGeneratedCVs]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '#28a745';
-    if (score >= 60) return '#ffc107';
-    return '#dc3545';
-  };
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setJobDescription('');
     setNumberOfCVs(2);
     setAdditionalData('');
@@ -232,7 +234,10 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
     setError('');
     onJobDescriptionChange('');
     onGeneratedCVsChange([]);
-  };
+  }, [onJobDescriptionChange, onGeneratedCVsChange]);
+
+  // Memoized generated CVs list to prevent unnecessary re-renders
+  const memoizedGeneratedCVs = useMemo(() => generatedCVs, [generatedCVs]);
 
   return (
     <div className="card">
@@ -319,7 +324,7 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
 
       {isLoading && <div className="loading">Generating CVs with AI...</div>}
 
-      {generatedCVs.length > 0 && (
+      {memoizedGeneratedCVs.length > 0 && (
         <div className="results">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3>Generated CVs</h3>
@@ -331,8 +336,8 @@ const CVGeneration: React.FC<CVGenerationProps> = ({
             </button>
           </div>
           <div className="generated-cvs-container">
-            {generatedCVs.map((cv, index) => (
-              <div key={index} className="result-card">
+            {memoizedGeneratedCVs.map((cv, index) => (
+              <div key={`${cv.title}-${index}`} className="result-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                   <h3>{cv.title}</h3>
                   <div style={{ display: 'flex', gap: '10px' }}>
