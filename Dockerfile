@@ -46,7 +46,9 @@ COPY --from=build /app/client/build ./client/build
 
 # Copy server files
 COPY server.js ./
-COPY uploads ./uploads
+
+# Create uploads directory (it may not exist in repo)
+RUN mkdir -p uploads
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
