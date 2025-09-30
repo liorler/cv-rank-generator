@@ -4,13 +4,13 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 COPY client/package*.json ./client/
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm install
-RUN cd client && npm install
+# Install dependencies with optimizations
+RUN npm ci --only=production --silent && \
+    cd client && npm ci --silent
 
 # Copy source code
 COPY . .
@@ -23,11 +23,25 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
+# Install system dependencies for Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Tell Puppeteer to use the installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 # Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm install --only=production
+RUN npm ci --only=production --silent
 
 # Copy built React app from build stage
 COPY --from=build /app/client/build ./client/build
@@ -37,8 +51,8 @@ COPY server.js ./
 COPY uploads ./uploads
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
 
 # Change ownership of the app directory
 RUN chown -R nextjs:nodejs /app
