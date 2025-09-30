@@ -29,8 +29,8 @@ interface CVRankingProps {
 }
 
 const CVRanking: React.FC<CVRankingProps> = ({
-  generatedCVs: propGeneratedCVs,
-  jobDescription: propJobDescription,
+  generatedCVs,
+  jobDescription,
   onGeneratedCVsChange,
   onJobDescriptionChange,
   shouldAutoRank = false,
@@ -38,19 +38,19 @@ const CVRanking: React.FC<CVRankingProps> = ({
 }) => {
   const [cvFiles, setCvFiles] = useState<File[]>([]);
   const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
-  const [jobDescriptionText, setJobDescriptionText] = useState(propJobDescription);
+  const [jobDescriptionText, setJobDescriptionText] = useState(jobDescription);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<RankingResult[]>([]);
   const [error, setError] = useState<string>('');
 
   // Auto-rank generated CVs when shouldAutoRank is true
   React.useEffect(() => {
-    if (shouldAutoRank && propGeneratedCVs.length > 0 && propJobDescription.trim()) {
+    if (shouldAutoRank && generatedCVs.length > 0 && jobDescription.trim()) {
       // Copy job description to text area
-      setJobDescriptionText(propJobDescription);
+      setJobDescriptionText(jobDescription);
       handleAutoRank();
     }
-  }, [shouldAutoRank, propGeneratedCVs, propJobDescription]);
+  }, [shouldAutoRank, generatedCVs, jobDescription]);
 
   const handleAutoRank = async () => {
     setIsLoading(true);
@@ -61,12 +61,12 @@ const CVRanking: React.FC<CVRankingProps> = ({
       const formData = new FormData();
       
       // Add generated CVs as files
-      propGeneratedCVs.forEach((cv, index) => {
+      generatedCVs.forEach((cv, index) => {
         formData.append('cvs', new Blob([cv.content], { type: 'text/plain' }), `cv_${index + 1}.txt`);
       });
       
       // Add job description
-      formData.append('jobDescription', new Blob([propJobDescription], { type: 'text/plain' }), 'job.txt');
+      formData.append('jobDescription', new Blob([jobDescription], { type: 'text/plain' }), 'job.txt');
 
       const response = await axios.post<RankingResponse>('/api/rank-cvs', formData, {
         headers: {
