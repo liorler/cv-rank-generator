@@ -52,7 +52,7 @@ const upload = multer({
   }
 });
 
-// Initialize OpenAI (you'll need to set OPENAI_API_KEY environment variable)
+// Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'your-api-key-here'
 });
